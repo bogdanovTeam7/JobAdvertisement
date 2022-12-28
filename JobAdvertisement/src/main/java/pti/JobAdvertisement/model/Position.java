@@ -13,7 +13,7 @@ public class Position {
 	@Id
 	@Column(name = "id")
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
-	private int id;
+	private Integer id;
 	@Column(name = "title")
 	private String title;
 	@Column(name = "location")
@@ -25,7 +25,7 @@ public class Position {
 		super();
 	}
 
-	public Position(int id, String title, String location, int clientId) {
+	public Position(Integer id, String title, String location, int clientId) {
 		super();
 		this.id = id;
 		this.title = title;
@@ -35,17 +35,16 @@ public class Position {
 
 	public Position(String title, String location, int clientId) {
 		super();
-		this.id = 0;
 		this.title = title;
 		this.location = location;
 		this.clientId = clientId;
 	}
 
-	public int getId() {
+	public Integer getId() {
 		return id;
 	}
 
-	public void setId(int id) {
+	public void setId(Integer id) {
 		this.id = id;
 	}
 

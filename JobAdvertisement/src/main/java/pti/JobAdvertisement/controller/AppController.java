@@ -3,13 +3,16 @@ package pti.JobAdvertisement.controller;
 import java.util.List;
 
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import pti.JobAdvertisement.db.Database;
 import pti.JobAdvertisement.model.Client;
+import pti.JobAdvertisement.model.Position;
 import pti.JobAdvertisement.response.AppKey;
+import pti.JobAdvertisement.response.URLs;
 
 @RestController
 public class AppController {
@@ -26,7 +29,7 @@ public class AppController {
 	@PostMapping("/clients")
 	public AppKey registrate(@RequestParam(name = "name") String name, @RequestParam(name = "email") String email) {
 		AppKey key = new AppKey();
-		if (!isNameValid(name)) {
+		if (!isTextValid(name, 100)) {
 			key.setMassege("Hibás név");
 		} else if (!isEmailValid(email)) {
 			key.setMassege("Hibás email");
@@ -56,11 +59,72 @@ public class AppController {
 		return email.matches(regex);
 	}
 
-	private boolean isNameValid(String name) {
+	private boolean isTextValid(String name, int length) {
 		if (name == null) {
 			return false;
 		}
 		name = name.trim();
-		return name.length() > 0 && name.length() <= 100;
+		return name.length() > 0 && name.length() <= length;
 	}
+
+	@PostMapping("/positions")
+	public URLs insertPosition(@RequestParam(name = "key") int key, @RequestParam(name = "title") String title,
+			@RequestParam(name = "location") String location) {
+		URLs urls = new URLs();
+		if (!isTextValid(title, 50)) {
+			urls.setMassege("hibás az állás megnevezése");
+		} else if (!isTextValid(location, 50)) {
+			urls.setMassege("hibás földrajzi hely");
+		} else {
+			Database db = new Database();
+			if (!db.isKeyValid(key)) {
+				urls.setMassege("hibás kulcs");
+			} else {
+				Position position = new Position(title, location, key);
+				db.insertPosition(position);
+				String url = createPositionURL(position.getId());
+				urls.addURL(url);
+				urls.setMassege("sikeres mentés");
+				System.out.println(urls);
+			}
+
+			db.close();
+		}
+
+		return urls;
+	}
+
+	private String createPositionURL(int id) {
+		return "/position/" + id;
+	}
+
+	@PostMapping("/position/{id}")
+	public Position getPosition(@PathVariable int id) {
+		Database db = new Database();
+		Position position = db.getPositionById(id);
+		db.close();
+		return position;
+	}
+
+	@GetMapping("/search")
+	public URLs searchURLs(@RequestParam(name = "key") int key, @RequestParam(name = "subtitle") String subtitle) {
+		URLs urls = new URLs();
+		Database db = new Database();
+		if (!isTextValid(subtitle, 50)) {
+			urls.setMassege("hibás az állás megnevezése");
+		} else if (!db.isKeyValid(key)) {
+			urls.setMassege("hibás kulcs");
+		} else {
+			List<Position> positions = db.getPositionsBySubtitle(subtitle);
+			for (Position position : positions) {
+				String url = createPositionURL(position.getId());
+				urls.addURL(url);
+			}
+			urls.setMassege("sikeres eredmény lekérdezése");
+		}
+
+		db.close();
+		return urls;
+	}
+
 }
